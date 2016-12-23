@@ -9,6 +9,7 @@ import wave
 import audioop
 import math
 import sys
+import tempfile
 
 import re
 
@@ -151,7 +152,7 @@ if __name__ == '__main__':
     stream.start_stream()
 
     # 録音用waveファイルのFileStream作成 ------------
-    wf = wave.open("wave_buf_write.wav", 'wb')
+    wf = wave.open(tempfile.TemporaryFile(), 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
     wf.setframerate(RATE)
