@@ -1,10 +1,12 @@
-# GoogleSpeechAPI_stream
+# google_speech_api_vad_stream
 
 [Google Cloud Speech gRPC API を使ってストリーム音声認識をしたい！（簡易VAD付けた）](http://qiita.com/sayonari/items/a70118a468483967ad34)
 
-- 簡易的な音声開始検出を実装し，音声が開始するまではPC側で監視
-- 音声開始を検出してから，googleに接続開始
-- 接続中の音声もバッファしておき，googleに繋がったらバッファから順に送信
+- Simple [Voice Activity Detection](https://en.wikipedia.org/wiki/Voice_activity_detection)
+- Client detects volume above threshold
+- Connect to google after VAD
+- Buffer to audio on connecting google and sends audio buffer when connected to google
+- Repeating connect to google after VAD
 
 ## Install(mac)
 
