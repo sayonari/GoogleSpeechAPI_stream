@@ -13,7 +13,7 @@ import sys
 import re
 
 from gcloud.credentials import get_credentials
-from google.cloud.speech.v1beta1 import cloud_speech_pb2 as cloud_speech
+from google.cloud.grpc.speech.v1beta1 import cloud_speech_pb2 as cloud_speech
 from google.rpc import code_pb2
 from grpc.beta import implementations
 
