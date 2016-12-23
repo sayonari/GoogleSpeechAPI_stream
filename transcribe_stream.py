@@ -10,6 +10,7 @@ import audioop
 import math
 import sys
 import tempfile
+import signal
 
 import re
 
@@ -17,6 +18,7 @@ from gcloud.credentials import get_credentials
 from google.cloud.grpc.speech.v1beta1 import cloud_speech_pb2 as cloud_speech
 from google.rpc import code_pb2
 from grpc.beta import implementations
+from grpc.framework.interfaces.face.face import RemoteError, AbortionError
 
 # 各種設定　#########################
 flag_recogRepeat = True  # 音声認識を繰り返し行う場合　Trueにする
@@ -59,6 +61,11 @@ def callback(in_data, frame_count, time_info, status):
     return (None, pyaudio.paContinue)
 
 
+def raise_if_no_result(signum, frame):
+    global recog_result
+    if not recog_result:
+        raise Exception()
+
 # Creates an SSL channel ###########
 def make_channel(host, port):
     ssl_channel = implementations.ssl_channel_credentials(None, None, None)
@@ -80,26 +87,37 @@ def make_channel(host, port):
 def listen_print_loop(recognize_stream):
     global flag_RecogEnd
     global recog_result
-    for resp in recognize_stream:
-        if resp.error.code != code_pb2.OK:
-            raise RuntimeError('Server error: ' + resp.error.message)
-
-        # 音声認識結果＆途中結果の表示 (受け取るデータの詳細は以下を参照のこと)
-        # https://cloud.google.com/speech/reference/rpc/google.cloud.speech.v1beta1#google.cloud.speech.v1beta1.SpeechRecognitionAlternative
-        for result in resp.results:
-            if result.is_final:
-                print "is_final: " + str(result.is_final)
-
-            for alt in result.alternatives:
-                print "conf:" + str(alt.confidence) + " stab:" + str(result.stability)
-                print "trans:" + alt.transcript
-                recog_result = alt.transcript
-
-            # 音声認識終了（is_final: True）
-            if result.is_final:
+    recog_result = ''
+    signal.signal(signal.SIGALRM, raise_if_no_result)
+    signal.alarm(RECORD_SEC)
+    try:
+        for resp in recognize_stream:
+            print(resp)
+            if resp.error.code != code_pb2.OK:
+                flag_RecogEnd = True
+                return
+            if resp.endpointer_type == "END_OF_AUDIO":
                 flag_RecogEnd = True
                 return
 
+            # 音声認識結果＆途中結果の表示 (受け取るデータの詳細は以下を参照のこと)
+            # https://cloud.google.com/speech/reference/rpc/google.cloud.speech.v1beta1#google.cloud.speech.v1beta1.SpeechRecognitionAlternative
+            for result in resp.results:
+                if result.is_final:
+                    print "is_final: " + str(result.is_final)
+
+                for alt in result.alternatives:
+                    print "conf:" + str(alt.confidence) + " stab:" + str(result.stability)
+                    print "trans:" + alt.transcript
+                    recog_result = alt.transcript
+
+                # 音声認識終了（is_final: True）
+                if result.is_final:
+                    flag_RecogEnd = True
+                    return
+    except Exception as e:
+        print(e)
+        flag_RecogEnd = True
 
 # request stream ####################
 def request_stream(channels=CHANNELS, rate=RATE, chunk=CHUNK):
@@ -225,3 +243,4 @@ if __name__ == '__main__':
     wf.close()  # wavefile stream クローズ
 
     print 'End Rec!'
+
