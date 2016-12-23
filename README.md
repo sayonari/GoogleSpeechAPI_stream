@@ -16,5 +16,5 @@
 
 ## Run
 
-- `python GoogleSpeechAPI_stream.py`
+- `python transcribe_stream.py`
 
