@@ -92,7 +92,6 @@ def listen_print_loop(recognize_stream):
     signal.alarm(RECORD_SEC)
     try:
         for resp in recognize_stream:
-            print(resp)
             if resp.error.code != code_pb2.OK:
                 flag_RecogEnd = True
                 return
