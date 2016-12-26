@@ -59,6 +59,9 @@ frames_startbuf = []
 
 # コールバック関数 ###################
 def callback(in_data, frame_count, time_info, status):
+    global frames
+    if frames == None:
+        frames = []
     frames.append(in_data)
     return (None, pyaudio.paContinue)
 
@@ -83,7 +86,7 @@ def make_channel(host, port):
 # listen print loop ##################
 def listen_print_loop(recognize_stream):
     recog_result = ''
-    def raise_if_no_result(signum, frame):
+    def raise_if_no_result(signum):
         if not recog_result:
             raise Exception()
     signal.signal(signal.SIGALRM, raise_if_no_result)
@@ -169,7 +172,10 @@ if __name__ == '__main__':
 
         # 録音開始までの処理 ##############################
         while not flag_record_start:
-            time.sleep(SLEEP_SEC)
+            try:
+                time.sleep(SLEEP_SEC)
+            except:
+                continue
 
             # 促音用バッファが長過ぎたら捨てる（STARTフレームより更に前のデータを保存しているバッファ）
             if len(frames_startbuf) > START_BUF_LEN:
